@@ -1,0 +1,157 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3c.org/TR/1999/REC-html401-19991224/loose.dtd">
+<!-- saved from url=(0030)http://localhost:8080/House-2/ -->
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>青鸟租房 - 首页</TITLE>
+<META content="text/html; charset=utf-8" http-equiv=Content-Type>
+<LINK rel=stylesheet type=text/css href="../css/style.css">
+<META name=GENERATOR content="MSHTML 8.00.7601.17514">
+  <script src="../js/axios.min.js"></script>
+  <script src="../js/vue.min.js"></script>
+</HEAD>
+<BODY>
+  <div id=app>
+<DIV id=header class=wrap>
+<DIV id=logo><IMG src="../images/logo.gif"></DIV></DIV>
+<DIV id=navbar class=wrap>
+<DL class="search clearfix">
+  <FORM id=form1 method=post >
+  <DT>
+  <UL>
+    <LI class=bold>房屋信息</LI>
+    <LI>标题：
+      <INPUT class=text type=text name=title> 
+      <LABEL class=ui-blue><INPUT @click="doSearch()" value=搜索房屋 type=button name=search></LABEL> 
+    </LI></UL></DT>
+  <DD>
+  <UL>
+    <li class=first>区域:</li>
+      <SELECT id=district name=districtId v-model="did" @change="loadStreet(did)"> 
+        <OPTION selected value="">不限</OPTION> 
+        <OPTION v-for="d in district" :value="d.id">{{d.name}}</OPTION>
+      </SELECT> 
+     
+    </UL></DD>
+  <DD>
+    <UL>
+     <li class=first>街道：</li> 
+        <SELECT id=street name=streetId> 
+          <OPTION selected value="">不限</OPTION>
+          <option v-for="s in street" :value="s.id">{{s.name}}</option>
+          </SELECT>
+        </UL>  
+    </DD>
+      <DD>
+  <UL>
+    <LI class=first>房型</LI>
+    <LI>
+      <SELECT name=typeId> 
+        <OPTION selected value="">不限</OPTION> 
+        <OPTION v-for="t in types" :value="t.id">{{t.name}}</OPTION>
+      </SELECT> 
+  </LI></UL></DD>
+  <DD>
+    <UL>
+      <LI class=first>价格</LI>
+      <LI><input type="text" name="startPrice" size="8">- </LI>
+    </UL></DD>
+    <DD>
+      <UL>
+        <li class="first">&nbsp;</li>
+        <li>
+      <input type="text" name="endPrice" size="8"></li>
+    </UL>
+    </DD>
+</FORM>
+</DL></DIV>
+<DIV class="main wrap">
+<TABLE class=house-list>
+  <TBODY>
+  <TR v-for="l in houses">
+    <TD class=house-thumb>
+      <span><A href="details.htm" target="_blank"><img :src="'http://localhost:80/'+l.path" width="100" height="75" alt=""></a></span></TD>
+    <TD>
+      <DL>
+        <DT><A href="" target="_blank">{{l.TITLE}}</A></DT>
+        <DD>{{l.dname}}-{{l.sname}},{{l.floorage}}平米<BR>联系方式：{{l.contact}} </DD></DL></TD>
+    <TD class=house-type>{{l.tname}}</TD>
+    <TD class=house-price><SPAN>{{l.price}}</SPAN>元/月</TD></TR>
+ </TBODY></TABLE>
+<DIV class=pager>
+<UL>
+  <LI class=current><A href="" @click="goPage(1)">首页</A></LI>
+  <LI><A href="" @click="goPage(curPage>1?curPage-1:1)">上一页</A></LI>
+  <LI><A href="" @click="goPage(curPage+1<totalPage?curPage+1:totalPage)">下一页</A></LI>
+  <LI><A href="" @click="goPage(totalPage)">末页</A></LI></UL><SPAN 
+class=total>{{curPage}}/{{totalPage}}页</SPAN> </DIV></DIV>
+<DIV id=footer class=wrap>
+<DL>
+  <DT>青鸟租房 © 2018 北大青鸟 京ICP证1000001号</DT>
+  <DD>关于我们 · 联系方式 · 意见反馈 · 帮助中心</DD></DL></DIV>
+</div>
+</BODY></HTML>
+<script>
+axios.defaults.baseURL="http://localhost:8080";
+axios.defaults.withCredentials=true; 
+ var vm=new Vue({
+   el:"#app",
+   data:{
+     types:null,
+     district:null,
+     did:"",
+     street:null,
+    totalPage:0,
+    curPage:0,
+    houses:null,
+    
+   },
+   mounted: function() {//加载事件
+    //1,加载区域
+     axios.get("/type/getAllType")
+      .then(res => {
+        this.types=res.data.data;
+      }),
+      axios.get("/district/getAllDistrict")
+      .then(res => {
+        this.district=res.data.data;
+      }),
+      //2,调用后台，加载所有出租房信息
+      axios.get("/house/searchHouse")
+      .then(res => {
+        this.houses=res.data.data.list;
+        console.log(res.data.data);
+        this.curPage=res.data.data.curPage;
+        this.totalPage=res.data.data.totalPage;
+  
+      })
+      .catch(err => {
+        console.error(err); 
+      })
+ },
+   methods: {
+    loadStreet:function(){
+        axios.get("/street/getStreetByDistrictId?id="+this.did)
+        .then(res => {
+          this.street=res.data.data;
+        })
+      },
+    doSearch: function(){
+      formData = new FormData(document.getElementById("form1"));
+      axios.post("/house/searchHouse",formData)
+      .then(res => {
+        this.houses=res.data.data.list;
+        this.num=res.data.data.curPage;
+        this.totalPage=res.data.data.totalPage;
+      })
+    },
+    goPage: function(){
+      formData = new FormData(document.getElementById("form1"));
+      axios.post("/house/searchHouse",formData)
+      .then(res => {
+        this.houses=res.data.data.list;
+      })
+
+    }
+   
+     
+   },
+  });
+  </script>
